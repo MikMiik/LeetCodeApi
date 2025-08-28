@@ -6,8 +6,10 @@ const cors = require("cors");
 const app = express();
 const port = 3000;
 const { sequelize } = require("@/models");
-const { domain } = require("@/configs/domain");
 const path = require("path");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
 
 // Redis Import
 const redisClient = require("@/configs/redis");
@@ -35,21 +37,33 @@ const { setContext } = require("@/middlewares/setContext");
 /*------------------------------------------------------------ */
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.set("trust proxy", true);
 app.use(express.static("public"));
-app.use(express.static(path.join(__dirname, "public")));
-app.use(
-  "/api/v1/uploads",
-  express.static(path.join(__dirname, "public/uploads"))
-);
-
-app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(methodOverride("_method"));
 app.use(responseEnhancer);
 app.use(handlePagination);
+// Security middleware
+app.use(helmet());
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: "Too many requests from this IP, please try again later.",
+  },
+});
+app.use(limiter);
+// Logging
+app.use(morgan("combined"));
 
 // ViewEngine
 app.use(expressLayouts);
@@ -58,7 +72,7 @@ app.set("views", "./src/views");
 app.set("layout", "./layouts/default");
 
 // Router
-app.use("/api/v1", checkAuth, setContext, router);
+app.use("/api/v1", setContext, router);
 
 // ErrorHandle
 app.use(notFoundHandler);
