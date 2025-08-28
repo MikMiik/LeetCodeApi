@@ -6,7 +6,6 @@ const cors = require("cors");
 const app = express();
 const port = 3000;
 const { sequelize } = require("@/models");
-const path = require("path");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
@@ -39,7 +38,7 @@ const { setContext } = require("@/middlewares/setContext");
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -52,7 +51,7 @@ app.use(methodOverride("_method"));
 app.use(responseEnhancer);
 app.use(handlePagination);
 // Security middleware
-app.use(helmet());
+// app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes

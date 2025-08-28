@@ -8,16 +8,10 @@ const { User } = require("@/models");
 
 exports.register = [
   checkSchema({
-    firstName: {
+    name: {
       trim: true,
       notEmpty: {
-        errorMessage: "Registration failed: Please enter your first name.",
-      },
-    },
-    lastName: {
-      trim: true,
-      notEmpty: {
-        errorMessage: "Registration failed: Please enter your last name.",
+        errorMessage: "Registration failed: Please enter your name.",
       },
     },
     email: {
@@ -58,15 +52,6 @@ exports.register = [
       custom: {
         options: async (value, { req }) => value === req.body.password,
         errorMessage: "Registration failed: Passwords do not match.",
-      },
-    },
-
-    agreeToTerms: {
-      custom: {
-        options: (value) => {
-          return value === true || value === "true";
-        },
-        errorMessage: "Registration failed: You must agree to the terms.",
       },
     },
   }),

@@ -1,5 +1,5 @@
 function generateClientUrl(pathname, query = {}) {
-  const baseUrl = process.env.CLIENT_URL;
+  const baseUrl = process.env.CLIENT_URL || "http://localhost:5173";
   const url = new URL(
     `${baseUrl.replace(/\/$/, "")}/${pathname.replace(/^\//, "")}`
   );

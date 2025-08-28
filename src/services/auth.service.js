@@ -20,7 +20,6 @@ const register = async (data) => {
   });
 
   sendUnverifiedUserEmail(user.id);
-  settingService.createDefaultSettings(user.id);
   return {
     message:
       "Registration successful. Please check your email to verify your account.",

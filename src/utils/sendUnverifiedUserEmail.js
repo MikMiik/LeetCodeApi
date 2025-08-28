@@ -15,7 +15,7 @@ function sendUnverifiedUserEmail(userId, path = "login") {
   } catch (error) {
     throwError(
       500,
-      "Failed to send unverified user email. Please try again later."
+      error.message || "Internal Server Error: Cannot send email."
     );
   }
 }
