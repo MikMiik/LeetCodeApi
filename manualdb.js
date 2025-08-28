@@ -1,37 +1,34 @@
 require("module-alias/register");
 require("dotenv").config();
 const { Problem } = require("@/models");
-const { v4: uuidv4 } = require("uuid");
 (async () => {
   await Problem.create({
-    title: "Add Two Numbers",
+    title: "Factorial",
     description:
-      "Given two integers a and b, return their sum.\n\nYou only need to compute a + b and return the result as an integer.",
-    difficulty: "Easy",
+      "Given a non-negative integer n, return the factorial of n.\n\nFactorial of n is defined as n! = n × (n-1) × ... × 1, and 0! = 1.",
+    difficulty: "Medium",
     testCases: [
       {
-        input: "a = 1, b = 2",
-        expected_output: "3",
-        explanation: "1 + 2 = 3",
+        input: "n = 0",
+        expected_output: "1",
+        explanation: "0! = 1",
       },
       {
-        input: "a = -5, b = 7",
-        expected_output: "2",
-        explanation: "-5 + 7 = 2",
+        input: "n = 5",
+        expected_output: "120",
+        explanation: "5! = 5 × 4 × 3 × 2 × 1 = 120",
       },
       {
-        input: "a = 100, b = 200",
-        expected_output: "300",
-        explanation: "100 + 200 = 300",
+        input: "n = 7",
+        expected_output: "5040",
+        explanation: "7! = 7 × 6 × 5 × 4 × 3 × 2 × 1 = 5040",
       },
     ],
     template: `
-      function addTwoNumbers(a, b) {
+    function factorial(n) {
       // TODO: Implement your logic here
-      return a + b;
     }
     
-    // Boilerplate for Judge0 to handle stdin
     const readline = require('readline');
     const rl = readline.createInterface({
       input: process.stdin,
@@ -40,8 +37,8 @@ const { v4: uuidv4 } = require("uuid");
     });
     
     rl.on('line', function (line) {
-      const [a, b] = line.trim().split(' ').map(Number);
-      console.log(addTwoNumbers(a, b));
+      const n = Number(line.trim());
+      console.log(factorial(n));
       rl.close();
     });`,
   });
