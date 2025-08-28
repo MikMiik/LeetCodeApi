@@ -1,104 +1,30 @@
 "use strict";
-const getCurrentUser = require("@/utils/getCurrentUser");
+
 const { Model } = require("sequelize");
 const { default: slugify } = require("slugify");
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {}
   }
   User.init(
     {
-      email: { type: DataTypes.STRING, allowNull: false, unique: true },
+      email: { type: DataTypes.STRING(50), unique: true },
 
       password: {
-        type: DataTypes.STRING(191),
+        type: DataTypes.STRING(255),
         allowNull: true,
       },
 
-      firstName: DataTypes.STRING(191),
-
-      lastName: DataTypes.STRING(191),
-
       name: {
-        type: DataTypes.VIRTUAL,
-        get() {
-          return `${this.getDataValue("firstName")} ${this.getDataValue("lastName")}`;
-        },
+        type: DataTypes.STRING(20),
       },
 
-      username: { type: DataTypes.STRING(191), unique: true },
-
-      googleId: {
-        type: DataTypes.STRING(255),
-      },
-
-      githubId: {
-        type: DataTypes.STRING(255),
-      },
-
-      birthday: DataTypes.DATE,
-
-      introduction: DataTypes.STRING(255),
-
-      website: DataTypes.STRING(255),
-
-      twoFactorAuth: DataTypes.BOOLEAN,
-
-      twoFactorSecret: DataTypes.STRING(50),
+      username: { type: DataTypes.STRING(100), unique: true },
 
       avatar: {
         type: DataTypes.STRING(255),
-        get() {
-          const raw = this.getDataValue("avatar");
-          if (!raw) return null;
-          return raw.startsWith("http")
-            ? raw
-            : `${process.env.BASE_URL}/${raw}`;
-        },
       },
-
-      coverImage: {
-        type: DataTypes.STRING(255),
-        get() {
-          const raw = this.getDataValue("coverImage");
-          if (!raw) return null;
-          return raw.startsWith("http")
-            ? raw
-            : `${process.env.BASE_URL}/${raw}`;
-        },
-      },
-
-      skills: DataTypes.JSON,
-
-      phone: { type: DataTypes.STRING(191), unique: true },
-
-      role: { type: DataTypes.STRING(191), defaultValue: "User" },
-
-      socials: DataTypes.JSON,
-
-      isFollowed: {
-        type: DataTypes.VIRTUAL,
-        get() {
-          return this.getDataValue("isFollowed");
-        },
-        set(value) {
-          this.setDataValue("isFollowed", value);
-        },
-      },
-
-      canViewProfile: {
-        type: DataTypes.VIRTUAL,
-      },
-
-      postsCount: DataTypes.INTEGER,
-
-      followersCount: DataTypes.INTEGER,
-
-      followingCount: DataTypes.INTEGER,
-
-      likesCount: DataTypes.INTEGER,
-
-      status: DataTypes.STRING(191),
 
       lastLogin: DataTypes.DATE,
 
@@ -107,14 +33,38 @@ module.exports = (sequelize, DataTypes) => {
       createdAt: DataTypes.DATE,
 
       updatedAt: DataTypes.DATE,
+
+      deletedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
     },
     {
       sequelize,
       modelName: "User",
       tableName: "users",
       timestamps: true,
+      paranoid: true, // Enable soft delete
     }
   );
 
+  // Handle username
+  User.addHook("beforeCreate", async (user, options) => {
+    if (options?.skipHandleUsername) return;
+    if (user.name) {
+      const baseSlug = slugify(user.name, {
+        lower: true,
+        strict: true,
+      });
+      let slug = baseSlug;
+      let counter = 1;
+      // Tìm username chưa tồn tại
+      while (await User.findOne({ where: { username: slug }, hooks: false })) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+      user.username = slug;
+    }
+  });
   return User;
 };

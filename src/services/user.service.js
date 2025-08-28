@@ -11,18 +11,7 @@ class UsersService {
       where: {
         [Op.or]: [{ id }, { username: id }],
       },
-      attributes: [
-        "id",
-        "email",
-        "firstName",
-        "lastName",
-        "username",
-        "name",
-        "avatar",
-        "role",
-        "status",
-        "verifiedAt",
-      ],
+      attributes: ["id", "email", "name", "username", "avatar", "verifiedAt"],
     });
 
     return user;
@@ -36,45 +25,42 @@ class UsersService {
       attributes: [
         "id",
         "email",
-        "firstName",
-        "lastName",
+        "name",
         "username",
         "name",
         "avatar",
-        "role",
-        "status",
         "verifiedAt",
       ],
-      include: [
-        {
-          model: Notification,
-          as: "notifications",
-          attributes: [
-            "id",
-            "type",
-            "notifiableType",
-            "notifiableId",
-            "content",
-            "link",
-            "seenAt",
-            "createdAt",
-            "updatedAt",
-          ],
-          through: {
-            attributes: [],
-          },
-        },
-        {
-          model: Setting,
-          as: "setting",
-          attributes: ["allowComments", "showViewCounts"],
-        },
-      ],
-      // Với many-to-many relationship thông qua junction table,
-      // chúng ta cần đặt order ở level chính của query.
-      order: [
-        [{ model: Notification, as: "notifications" }, "createdAt", "DESC"],
-      ],
+      // include: [
+      //   {
+      //     model: Notification,
+      //     as: "notifications",
+      //     attributes: [
+      //       "id",
+      //       "type",
+      //       "notifiableType",
+      //       "notifiableId",
+      //       "content",
+      //       "link",
+      //       "seenAt",
+      //       "createdAt",
+      //       "updatedAt",
+      //     ],
+      //     through: {
+      //       attributes: [],
+      //     },
+      //   },
+      //   {
+      //     model: Setting,
+      //     as: "setting",
+      //     attributes: ["allowComments", "showViewCounts"],
+      //   },
+      // ],
+      // // Với many-to-many relationship thông qua junction table,
+      // // chúng ta cần đặt order ở level chính của query.
+      // order: [
+      //   [{ model: Notification, as: "notifications" }, "createdAt", "DESC"],
+      // ],
     });
 
     return user;
