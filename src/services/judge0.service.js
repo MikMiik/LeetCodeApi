@@ -25,7 +25,7 @@ class Judge0Service {
    */
   async submitCode(submissionData) {
     try {
-      const response = await this.client.post("/submissions", {
+      const payload = {
         source_code: submissionData.source_code,
         language_id: submissionData.language_id,
         stdin: submissionData.stdin || "",
@@ -37,11 +37,15 @@ class Judge0Service {
         command_line_arguments: submissionData.command_line_arguments || null,
         redirect_stderr_to_stdout:
           submissionData.redirect_stderr_to_stdout || false,
-      });
-
+      };
+      if (submissionData.base64_encoded) {
+        payload.base64_encoded = true;
+      }
+      const response = await this.client.post("/submissions", payload);
       return {
         success: true,
         token: response.data.token,
+        base64_encoded: !!submissionData.base64_encoded,
       };
     } catch (error) {
       console.error(
@@ -64,21 +68,33 @@ class Judge0Service {
   async getSubmissionResult(
     token,
     includeStderr = true,
-    includeCompileOutput = true
+    includeCompileOutput = true,
+    base64_encoded = false
   ) {
     try {
       const params = new URLSearchParams({
-        base64_encoded: "false",
+        base64_encoded: base64_encoded ? "true" : "false",
         fields: "*",
       });
-
       if (includeStderr) params.append("stderr", "true");
       if (includeCompileOutput) params.append("compile_output", "true");
-
       const response = await this.client.get(`/submissions/${token}?${params}`);
-
-      // Normalize stdout and expected_output for robust comparison
+      // If base64_encoded, decode stdout/expected_output
+      const decodeBase64 = (str) => {
+        if (typeof str !== "string") return str;
+        try {
+          return Buffer.from(str, "base64").toString("utf-8");
+        } catch {
+          return str;
+        }
+      };
       const data = { ...response.data };
+      if (base64_encoded) {
+        if (typeof data.stdout === "string")
+          data.stdout = decodeBase64(data.stdout);
+        if (typeof data.expected_output === "string")
+          data.expected_output = decodeBase64(data.expected_output);
+      }
       const normalize = (str) =>
         typeof str === "string"
           ? str.replace(/'/g, '"').replace(/\s+/g, "")
@@ -106,6 +122,20 @@ class Judge0Service {
         data,
       };
     } catch (error) {
+      // If error is base64 required, try again with base64_encoded=true
+      if (
+        error.response &&
+        error.response.data &&
+        typeof error.response.data.error === "string" &&
+        error.response.data.error.includes("base64_encoded=true")
+      ) {
+        return this.getSubmissionResult(
+          token,
+          includeStderr,
+          includeCompileOutput,
+          true
+        );
+      }
       console.error(
         "Judge0 get result error:",
         error.response?.data || error.message
