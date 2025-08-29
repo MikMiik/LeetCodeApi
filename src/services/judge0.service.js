@@ -77,9 +77,33 @@ class Judge0Service {
 
       const response = await this.client.get(`/submissions/${token}?${params}`);
 
+      // Normalize stdout and expected_output for robust comparison
+      const data = { ...response.data };
+      const normalize = (str) =>
+        typeof str === "string"
+          ? str.replace(/'/g, '"').replace(/\s+/g, "")
+          : str;
+      if (typeof data.stdout === "string") data.stdout = normalize(data.stdout);
+      if (typeof data.expected_output === "string")
+        data.expected_output = normalize(data.expected_output);
+      if (typeof data.compile_output === "string")
+        data.compile_output = data.compile_output.replace(/'/g, '"');
+      if (typeof data.stderr === "string")
+        data.stderr = data.stderr.replace(/'/g, '"');
+      // Compare and add passed field
+      let passed = false;
+      if (
+        typeof data.stdout === "string" &&
+        typeof data.expected_output === "string" &&
+        data.stdout.length > 0 &&
+        data.expected_output.length > 0
+      ) {
+        passed = data.stdout === data.expected_output;
+      }
+      data.passed = passed;
       return {
         success: true,
-        data: response.data,
+        data,
       };
     } catch (error) {
       console.error(
@@ -164,9 +188,37 @@ class Judge0Service {
         `/submissions/batch?tokens=${tokensQuery}&base64_encoded=false&fields=*`
       );
 
+      // Normalize stdout and expected_output for robust comparison in each submission
+      const normalize = (str) =>
+        typeof str === "string"
+          ? str.replace(/'/g, '"').replace(/\s+/g, "")
+          : str;
+      const submissions = response.data.submissions.map((item) => {
+        const data = { ...item };
+        if (typeof data.stdout === "string")
+          data.stdout = normalize(data.stdout);
+        if (typeof data.expected_output === "string")
+          data.expected_output = normalize(data.expected_output);
+        if (typeof data.compile_output === "string")
+          data.compile_output = data.compile_output.replace(/'/g, '"');
+        if (typeof data.stderr === "string")
+          data.stderr = data.stderr.replace(/'/g, '"');
+        // Compare and add passed field
+        let passed = false;
+        if (
+          typeof data.stdout === "string" &&
+          typeof data.expected_output === "string" &&
+          data.stdout.length > 0 &&
+          data.expected_output.length > 0
+        ) {
+          passed = data.stdout === data.expected_output;
+        }
+        data.passed = passed;
+        return data;
+      });
       return {
         success: true,
-        data: response.data.submissions,
+        data: submissions,
       };
     } catch (error) {
       console.error(
